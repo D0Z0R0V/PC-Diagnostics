@@ -5,6 +5,9 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtGui import QPixmap, QAction, QIcon
 from PyQt6.QtCore import Qt
 from PyQt6.QtCore import QSize
+from PyQt6.QtCore import QTimer
+
+from core.cpu import monitor_cpu
 
 import sys
 
@@ -83,7 +86,7 @@ class MainWindow(QMainWindow):
     def init_screens(self):
         """Инициализация экранов для QStackedWidget."""
         self.general_info_screen = self.create_general_screen()
-        self.processor_screen = self.create_info_screen("Процессор", "Информация о процессоре.", "gui/img/cpu.png")
+        self.processor_screen = self.CPU_info_screen("Процессор", "Информация о процессоре.", "gui/img/cpu.png")
         self.memory_screen = self.create_info_screen("Оперативная память", "Информация о памяти.", "gui/img/ram.png")
         self.disk_screen = self.create_info_screen("Дисковая подсистема", "Информация о дисках.", "gui/img/disk.png")
         self.gpu_screen = self.create_info_screen("Видеокарта", "Информация о видеокарте.", "gui/img/gpu.png")
@@ -130,11 +133,46 @@ class MainWindow(QMainWindow):
             layout.addWidget(card, i // 4, i % 4)
 
         return screen
-
-    def create_info_screen(self, title, description, image_path=None):
-        """Создаем экран с информацией, где изображение слева сверху."""
+    
+    def CPU_info_screen(self, title, description, image_path=None):
         screen = QWidget()
         main_layout = QHBoxLayout(screen)  # Основной горизонтальный макет
+
+        left_layout = QVBoxLayout()
+        if image_path:
+            image_label = QLabel(self)
+            pixmap = QPixmap(image_path)
+            if pixmap.isNull():
+                print(f"Ошибка: не удалось загрузить изображение по пути: {image_path}")
+                return screen
+            resized_pixmap = pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            image_label.setPixmap(resized_pixmap)
+            left_layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        
+        left_layout.addStretch()
+ 
+        right_layout = QVBoxLayout()
+        title_label = QLabel(f"<h1>{title}</h1>", self)
+        right_layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
+
+        description_label = QLabel(description, self)
+        right_layout.addWidget(description_label, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
+
+        processor_info = monitor_cpu()
+        info_label = QLabel(processor_info, self)
+        right_layout.addWidget(info_label, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
+        
+        right_layout.addStretch() 
+
+        main_layout.addLayout(left_layout)
+        main_layout.addLayout(right_layout)
+
+        return screen
+
+    def create_info_screen(self, title, description, image_path=None):
+        """Создаем экран с информацией"""
+        screen = QWidget()
+        main_layout = QHBoxLayout(screen)
         
         # Левая часть с изображением
         left_layout = QVBoxLayout()
@@ -148,7 +186,7 @@ class MainWindow(QMainWindow):
             image_label.setPixmap(resized_pixmap)
             left_layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
         
-        left_layout.addStretch()  # Растягиваем, чтобы контент был прижат к верху
+        left_layout.addStretch()  
         
         # Правая часть с текстом
         right_layout = QVBoxLayout()
@@ -157,10 +195,10 @@ class MainWindow(QMainWindow):
 
         description_label = QLabel(description, self)
         right_layout.addWidget(description_label, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
+        
+        right_layout.addStretch()  
 
-        right_layout.addStretch()  # Растягиваем, чтобы контент прижимался к верху
-
-        # Добавляем левую и правую колонку в основной макет
+        
         main_layout.addLayout(left_layout)
         main_layout.addLayout(right_layout)
 
