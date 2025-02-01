@@ -34,15 +34,15 @@ class MainWindow(QMainWindow):
     def init_menu_list(self):
         """Инициализация левого меню с иконками."""
         menu_items = [
-            ("Общие сведения", "icons/general.png"),
-            ("Процессор", "icons/cpu.png"),
-            ("Оперативная память", "icons/ram.png"),
-            ("Дисковая подсистема", "icons/disk.png"),
-            ("Видеокарта", "icons/gpu.png"),
-            ("Материнская плата", "icons/motherboard.png"),
-            ("Напряжение", "icons/voltage.png"),
-            ("Диагностика", "icons/diagnostic.png"),
-            ("Тестирование", "icons/testing.png"),
+            ("Общие сведения", "gui/img/general.png"),
+            ("Процессор", "gui/img/cpu.png"),
+            ("Оперативная память", "gui/img/ram.png"),
+            ("Дисковая подсистема", "gui/img/disk.png"),
+            ("Видеокарта", "gui/img/gpu.png"),
+            ("Материнская плата", "gui/img/motherboard.png"),
+            ("Напряжение", "gui/img/voltage.png"),
+            ("Диагностика", "gui/img/diagnostic.png"),
+            ("Тестирование", "gui/img/testing.png"),
         ]
 
         for text, icon_path in menu_items:
@@ -132,25 +132,37 @@ class MainWindow(QMainWindow):
         return screen
 
     def create_info_screen(self, title, description, image_path=None):
-        """Создаем экран для QStackedWidget."""
+        """Создаем экран с информацией, где изображение слева сверху."""
         screen = QWidget()
-        layout = QVBoxLayout(screen)
-
-        title_label = QLabel(f"<h1>{title}</h1>", self)
-        layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignTop)
-
+        main_layout = QHBoxLayout(screen)  # Основной горизонтальный макет
+        
+        # Левая часть с изображением
+        left_layout = QVBoxLayout()
         if image_path:
             image_label = QLabel(self)
             pixmap = QPixmap(image_path)
             if pixmap.isNull():
                 print(f"Ошибка: не удалось загрузить изображение по пути: {image_path}")
                 return screen
-            resized_pixmap = pixmap.scaled(80, 80, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            resized_pixmap = pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             image_label.setPixmap(resized_pixmap)
-            layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignCenter)
+            left_layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        
+        left_layout.addStretch()  # Растягиваем, чтобы контент был прижат к верху
+        
+        # Правая часть с текстом
+        right_layout = QVBoxLayout()
+        title_label = QLabel(f"<h1>{title}</h1>", self)
+        right_layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
 
         description_label = QLabel(description, self)
-        layout.addWidget(description_label, alignment=Qt.AlignmentFlag.AlignTop)
+        right_layout.addWidget(description_label, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
+
+        right_layout.addStretch()  # Растягиваем, чтобы контент прижимался к верху
+
+        # Добавляем левую и правую колонку в основной макет
+        main_layout.addLayout(left_layout)
+        main_layout.addLayout(right_layout)
 
         return screen
 
