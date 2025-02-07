@@ -7,7 +7,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtCore import QSize
 from PyQt6.QtCore import QTimer
 
-from core.cpu import monitor_cpu
+from core.cpu2 import monitor_cpu
 
 import sys
 
