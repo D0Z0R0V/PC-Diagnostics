@@ -7,9 +7,9 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtCore import QSize
 from PyQt6.QtCore import QTimer
 
-from core.cpu2 import monitor_cpu
+from core.cpu import get_cpu_info
 
-import sys
+import sys, json
 
 
 class MainWindow(QMainWindow):
@@ -136,38 +136,51 @@ class MainWindow(QMainWindow):
     
     def CPU_info_screen(self, title, description, image_path=None):
         screen = QWidget()
-        main_layout = QHBoxLayout(screen)  # Основной горизонтальный макет
+        layout = QVBoxLayout(screen)
 
-        left_layout = QVBoxLayout()
-        if image_path:
-            image_label = QLabel(self)
-            pixmap = QPixmap(image_path)
-            if pixmap.isNull():
-                print(f"Ошибка: не удалось загрузить изображение по пути: {image_path}")
-                return screen
-            resized_pixmap = pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-            image_label.setPixmap(resized_pixmap)
-            left_layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
-        
-        left_layout.addStretch()
- 
-        right_layout = QVBoxLayout()
-        title_label = QLabel(f"<h1>{title}</h1>", self)
-        right_layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
+        image_label = QLabel(self)
+        pixmap = QPixmap("gui/img/cpu.png")
+        image_label.setPixmap(pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio))
+        layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        description_label = QLabel(description, self)
-        right_layout.addWidget(description_label, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
+        title_label = QLabel("<h1>Процессор</h1>", self)
+        layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        processor_info = monitor_cpu()
-        info_label = QLabel(processor_info, self)
-        right_layout.addWidget(info_label, alignment=Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
-        
-        right_layout.addStretch() 
+        self.cpu_info_label = QLabel("Загрузка: --%", self)
+        layout.addWidget(self.cpu_info_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        main_layout.addLayout(left_layout)
-        main_layout.addLayout(right_layout)
+        # Запуск таймера для обновления
+        self.cpu_timer = QTimer()
+        self.cpu_timer.timeout.connect(self.update_cpu_info)
+        self.cpu_timer.start(500)  # обновление каждые 0.5 секунды
 
         return screen
+
+    def update_cpu_info(self):
+        """Обновление информации о процессоре."""
+        cpu_data = get_cpu_info()  # Получаем словарь
+
+        if "error" in cpu_data:
+            cpu_text = f"Ошибка: {cpu_data['error']}"
+        else:
+            cpu_text = (
+                f"Загрузка: {cpu_data['usage']}%\n"
+                f"Ядер: {cpu_data['cores']}\n"
+                f"Потоков: {cpu_data['threads']}\n"
+                f"Частота: {cpu_data['freq_current']} MHz (мин {cpu_data['freq_min']}, макс {cpu_data['freq_max']})\n"
+            )
+
+            # Добавляем температуру, если есть
+            if cpu_data["temperatures"]:
+                temp_texts = []
+                for sensor, entries in cpu_data["temperatures"].items():
+                    for entry in entries:
+                        temp_texts.append(
+                            f"{entry['label']}: {entry['current']}°C (макс {entry['high']}, крит {entry['critical']})"
+                        )
+                cpu_text += "\nТемпературы:\n" + "\n".join(temp_texts)
+
+        self.cpu_info_label.setText(cpu_text)
 
     def create_info_screen(self, title, description, image_path=None):
         """Создаем экран с информацией"""
