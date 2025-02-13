@@ -9,6 +9,8 @@ from PyQt6.QtCore import QTimer
 
 from core.cpu import get_cpu_info
 from core.gpu import monitor_gpu
+from core.ram import monitor_ram
+
 
 import sys, json
 
@@ -44,9 +46,9 @@ class MainWindow(QMainWindow):
             ("Дисковая подсистема", "gui/img/disk.png"),
             ("Видеокарта", "gui/img/gpu.png"),
             ("Материнская плата", "gui/img/motherboard.png"),
-            ("Напряжение", "gui/img/voltage.png"),
-            ("Диагностика", "gui/img/diagnostic.png"),
-            ("Тестирование", "gui/img/testing.png"),
+            ("Напряжение", "gui/img/volt.png"),
+            ("Диагностика", "gui/img/diag.png"),
+            ("Тестирование", "gui/img/test.png"),
         ]
 
         for text, icon_path in menu_items:
@@ -92,9 +94,9 @@ class MainWindow(QMainWindow):
         self.disk_screen = self.create_info_screen("Дисковая подсистема", "Информация о дисках.", "gui/img/disk.png")
         self.gpu_screen = self.GPU_info_screen("Видеокарта", "Информация о видеокарте.", "gui/img/gpu.png")
         self.motherboard_screen = self.create_info_screen("Материнская плата", "Информация о материнской плате.", "gui/img/motherboard.png")
-        self.voltage_screen = self.create_info_screen("Напряжение", "Информация о напряжении.")
-        self.diagnostic_screen = self.create_info_screen("Диагностика", "Режим диагностики системы.")
-        self.testing_screen = self.create_info_screen("Тестирование", "Тестирование системы на устойчивость.")
+        self.voltage_screen = self.create_info_screen("Напряжение", "Информация о напряжении.", "gui/img/volt.png")
+        self.diagnostic_screen = self.create_info_screen("Диагностика", "Режим диагностики системы.", "gui/img/diag.png")
+        self.testing_screen = self.create_info_screen("Тестирование", "Тестирование системы на устойчивость.", "gui/img/test.png")
         
         self.stacked_widget.addWidget(self.general_info_screen)
         self.stacked_widget.addWidget(self.processor_screen)
@@ -118,9 +120,9 @@ class MainWindow(QMainWindow):
             ("Дисковая подсистема", "gui/img/disk.png"),
             ("Видеокарта", "gui/img/gpu.png"),
             ("Материнская плата", "gui/img/motherboard.png"),
-            ("Напряжение", None),
-            ("Диагностика", None),
-            ("Тестирование", None),
+            ("Напряжение", "gui/img/volt.png"),
+            ("Диагностика", "gui/img/diag.png"),
+            ("Тестирование", "gui/img/test.png"),
         ]
 
         for i, (title, icon_path) in enumerate(cards):
@@ -204,7 +206,7 @@ class MainWindow(QMainWindow):
         # Таймер для обновления данных
         self.gpu_timer = QTimer()
         self.gpu_timer.timeout.connect(self.update_gpu_info)
-        self.gpu_timer.start(1000)  # Обновление каждую секунду
+        self.gpu_timer.start(500)  # Обновление каждую секунду
 
         return screen
     
@@ -229,12 +231,43 @@ class MainWindow(QMainWindow):
         self.gpu_info_label.setText(gpu_text)
         
     def RAM_info_screen(self, title, description, image_path=None):
-        pass
-    
-    def update_ram_imfo(self):
-        pass
+        screen = QWidget()
+        layout = QVBoxLayout(screen)
         
-
+        image_label = QLabel(self)
+        pixmap = QPixmap("gui/img/ram.png")
+        image_label.setPixmap(pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio))
+        layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        
+        title_text = QLabel("<h1>Оперативная память</h1>", self)
+        layout.addWidget(title_text, alignment=Qt.AlignmentFlag.AlignCenter)
+        
+        self.ram_info_label = QLabel("Загрузка: --%", self)
+        layout.addWidget(self.ram_info_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        
+        self.ram_timer = QTimer()
+        self.ram_timer.timeout.connect(self.update_ram_info)
+        self.ram_timer.start(500)
+        
+        return screen
+    
+    def update_ram_info(self):
+        ram_info = monitor_ram()
+        
+        if not ram_info:
+            self.ram_info_label.setText("Ошибка: Не удалось получить данные о RAM")
+            return
+        else:
+            ram_text = (
+                f"Общий объем памяти: {ram_info['ram']} ГБ\n"
+                f"Свободное место: {ram_info['free']} ГБ\n"
+                f"Используется сейчас: {ram_info['usage']} ГБ\n"
+                f"Занято: {ram_info['percent']} %"
+            )
+            
+        self.ram_info_label.setText(ram_text)
+            
+        
     def create_info_screen(self, title, description, image_path=None):
         """Создаем экран с информацией"""
         screen = QWidget()
