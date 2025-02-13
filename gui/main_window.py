@@ -8,6 +8,7 @@ from PyQt6.QtCore import QSize
 from PyQt6.QtCore import QTimer
 
 from core.cpu import get_cpu_info
+from core.gpu import monitor_gpu
 
 import sys, json
 
@@ -87,9 +88,9 @@ class MainWindow(QMainWindow):
         """Инициализация экранов для QStackedWidget."""
         self.general_info_screen = self.create_general_screen()
         self.processor_screen = self.CPU_info_screen("Процессор", "Информация о процессоре.", "gui/img/cpu.png")
-        self.memory_screen = self.create_info_screen("Оперативная память", "Информация о памяти.", "gui/img/ram.png")
+        self.memory_screen = self.RAM_info_screen("Оперативная память", "Информация о памяти.", "gui/img/ram.png")
         self.disk_screen = self.create_info_screen("Дисковая подсистема", "Информация о дисках.", "gui/img/disk.png")
-        self.gpu_screen = self.create_info_screen("Видеокарта", "Информация о видеокарте.", "gui/img/gpu.png")
+        self.gpu_screen = self.GPU_info_screen("Видеокарта", "Информация о видеокарте.", "gui/img/gpu.png")
         self.motherboard_screen = self.create_info_screen("Материнская плата", "Информация о материнской плате.", "gui/img/motherboard.png")
         self.voltage_screen = self.create_info_screen("Напряжение", "Информация о напряжении.")
         self.diagnostic_screen = self.create_info_screen("Диагностика", "Режим диагностики системы.")
@@ -181,6 +182,58 @@ class MainWindow(QMainWindow):
                 cpu_text += "\nТемпературы:\n" + "\n".join(temp_texts)
 
         self.cpu_info_label.setText(cpu_text)
+        
+    def GPU_info_screen(self, title, description, image_path=None):
+        screen = QWidget()
+        layout = QVBoxLayout(screen)
+
+        # Изображение GPU
+        image_label = QLabel(self)
+        pixmap = QPixmap("gui/img/gpu.png")
+        image_label.setPixmap(pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio))
+        layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # Заголовок
+        title_label = QLabel("<h1>Видеокарта</h1>", self)
+        layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # Виджет для информации о видеокарте
+        self.gpu_info_label = QLabel("Загрузка: --%", self)
+        layout.addWidget(self.gpu_info_label, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # Таймер для обновления данных
+        self.gpu_timer = QTimer()
+        self.gpu_timer.timeout.connect(self.update_gpu_info)
+        self.gpu_timer.start(1000)  # Обновление каждую секунду
+
+        return screen
+    
+    def update_gpu_info(self):
+        gpu_data_list = monitor_gpu()
+
+        if not gpu_data_list:
+            self.gpu_info_label.setText("Ошибка: Не удалось получить данные о видеокарте")
+            return
+
+        # Формируем текст для всех видеокарт
+        gpu_text = ""
+        for i, gpu_data in enumerate(gpu_data_list):
+            gpu_text += (
+                f"<b>GPU {i}: {gpu_data['gpu']}</b>\n"
+                f"Загрузка: {gpu_data['load']}%\n"
+                f"Загрузка памяти: {gpu_data['ram_load']}%\n"
+                f"Температура: {gpu_data['temperature']}°C\n"
+                f"Частота чипа: {gpu_data['chip']} МГц\n\n"
+            )
+
+        self.gpu_info_label.setText(gpu_text)
+        
+    def RAM_info_screen(self, title, description, image_path=None):
+        pass
+    
+    def update_ram_imfo(self):
+        pass
+        
 
     def create_info_screen(self, title, description, image_path=None):
         """Создаем экран с информацией"""

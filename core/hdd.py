@@ -1,30 +1,29 @@
-import psutil, time
+import psutil
+import time
 
 def monitor_hdd():
+    """Получает информацию о корневом разделе диска."""
     
-    part = psutil.disk_partitions()
+    # Определяем корневой раздел
+    root_partition = next((p for p in psutil.disk_partitions() if p.mountpoint == '/'), None)
     
-    for partition in part:
-        try:
-            usage = psutil.disk_usage(partition.mountpoint)
-            
-            print(f"Устройство: {partition.device}")
-            #print(f"Точка монтирования: {partition.mountpoint}")
-            print(f"Тип файловой системы: {partition.fstype}")
-            print(f"Общий размер: {usage.total / (1024.0 ** 3):.2f} ГБ")
-            print(f"Используемое место: {usage.used / (1024.0 ** 3):.2f} ГБ")
-            print(f"Свободное место: {usage.free / (1024.0 ** 3):.2f} ГБ")
-        except PermissionError:
-            continue
-        
-        if 'used' in locals() and 'total' in locals():
-            percent_used = usage.percent
-            
-        else:
-            continue
-            
-        print(f"Процент использования: {percent_used}%\n")
-        
+    if not root_partition:
+        print("Не удалось определить корневой раздел.")
+        return
+    
+    try:
+        usage = psutil.disk_usage(root_partition.mountpoint)
+
+        print(f"Устройство: {root_partition.device}")
+        print(f"Тип файловой системы: {root_partition.fstype}")
+        print(f"Общий размер: {usage.total / (1024.0 ** 3):.2f} ГБ")
+        print(f"Используемое место: {usage.used / (1024.0 ** 3):.2f} ГБ")
+        print(f"Свободное место: {usage.free / (1024.0 ** 3):.2f} ГБ")
+        print(f"Процент использования: {usage.percent}%\n")
+
+    except PermissionError:
+        print("Ошибка доступа к информации о диске.")
+
 while True:
     monitor_hdd()
     time.sleep(1)

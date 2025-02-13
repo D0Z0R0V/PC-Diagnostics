@@ -1,26 +1,28 @@
 from pynvml import *
-import time
-
-nvmlInit()
 
 def monitor_gpu():
-    divice = nvmlDeviceGetCount()
-    
-    for i in range(divice):
+    """Мониторинг всех доступных видеокарт."""
+    nvmlInit()  # Инициализируем библиотеку NVML
+
+    device_count = nvmlDeviceGetCount()  # Получаем количество GPU
+    gpu_list = []  # Список для хранения данных о всех видеокартах
+
+    for i in range(device_count):
         handle = nvmlDeviceGetHandleByIndex(i)
         gpu_name = nvmlDeviceGetName(handle)
-        temperatura = nvmlDeviceGetTemperature(handle, NVML_TEMPERATURE_GPU)
+        temperature = nvmlDeviceGetTemperature(handle, NVML_TEMPERATURE_GPU)
         clock_freq = nvmlDeviceGetClockInfo(handle, NVML_CLOCK_GRAPHICS)
         load = nvmlDeviceGetUtilizationRates(handle)
-        
-        print(f"GPU {i}: {gpu_name}")
-        print(f"Нагрузка на GPU: {load.gpu}")
-        print(f"Загрузка на памяти GPU: {load.memory}")
-        print(f"Температура: {temperatura} C")
-        print(f"Частота графического чипа: {clock_freq} МГц")
-        
-while True:
-    monitor_gpu()
-    time.sleep(1)
-        
-        
+
+        gpu_info = {
+            "gpu": gpu_name,
+            "load": load.gpu,  # Нагрузка GPU в %
+            "ram_load": load.memory,  # Нагрузка памяти в %
+            "temperature": temperature,  # Температура в градусах
+            "chip": clock_freq,  # Частота графического чипа в МГц
+        }
+        gpu_list.append(gpu_info)  # Добавляем данные в список
+
+    nvmlShutdown()  # Завершаем работу с NVML
+    return gpu_list  # Возвращаем список с информацией о всех видеокартах
+

@@ -19,12 +19,10 @@ def monitor_ram():
     except Exception as ex:
         print(f"Ошибка при получении данных: {ex}")'''
     
-    print(f"Оперативная память: {ram.total / (1024**3):.2f} ГБ")
-    print(f"Доступная память: {ram.available / (1024**3):.2f} ГБ")
-    print(f"Используемая память: {ram.used / (1024**3):.2f} ГБ")
-    print(f"Ипользовано: {ram.percent} % ")
-    
-    
-while True:
-    monitor_ram()
-    time.sleep(1)
+    ram_info = {
+        "ram": round(ram.total / (1024**3), 2), #ГБ
+        "free": round(ram.available / (1024**3), 2), #ГБ
+        "usage": round(ram.used / (1024**3), 2), #ГБ
+        "percent": ram.percent, # %
+    }
+    return ram_info
