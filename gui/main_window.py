@@ -10,6 +10,7 @@ from PyQt6.QtCore import QTimer
 from core.cpu import get_cpu_info
 from core.gpu import monitor_gpu
 from core.ram import monitor_ram
+from core.hdd import monitor_hdd
 
 
 import sys, json
@@ -91,7 +92,7 @@ class MainWindow(QMainWindow):
         self.general_info_screen = self.create_general_screen()
         self.processor_screen = self.CPU_info_screen("Процессор", "Информация о процессоре.", "gui/img/cpu.png")
         self.memory_screen = self.RAM_info_screen("Оперативная память", "Информация о памяти.", "gui/img/ram.png")
-        self.disk_screen = self.create_info_screen("Дисковая подсистема", "Информация о дисках.", "gui/img/disk.png")
+        self.disk_screen = self.HDD_info_screen("Дисковая подсистема", "Информация о дисках.", "gui/img/disk.png")
         self.gpu_screen = self.GPU_info_screen("Видеокарта", "Информация о видеокарте.", "gui/img/gpu.png")
         self.motherboard_screen = self.create_info_screen("Материнская плата", "Информация о материнской плате.", "gui/img/motherboard.png")
         self.voltage_screen = self.create_info_screen("Напряжение", "Информация о напряжении.", "gui/img/volt.png")
@@ -266,6 +267,38 @@ class MainWindow(QMainWindow):
             )
             
         self.ram_info_label.setText(ram_text)
+        
+    def HDD_info_screen(self, title, description, image_path=None):
+        screen = QWidget()
+        layout = QVBoxLayout(screen)
+        
+        image_label = QLabel(self)
+        pixmap = QPixmap("gui/img/disk.png")
+        image_label.setPixmap(pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio))
+        layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        
+        title_lable = QLabel("<h1>Диск</h1>", self)
+        layout.addWidget(title_lable, alignment=Qt.AlignmentFlag.AlignCenter)
+        
+        self.hdd_info_label = QLabel("Загрузка: --%", self)
+        layout.addWidget(self.hdd_info_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        
+        self.hdd_time = QTimer()
+        self.hdd_time.timeout.connect(self.update_hdd_info)
+        self.hdd_time.start(500)
+        
+        return screen
+    
+    def update_hdd_info(self):
+        hdd_info = monitor_hdd()
+        
+        if not hdd_info:
+            self.hdd_info_label.setText("Ошибка: Не удалось получить данные о диске(HDD)")
+            
+        else:
+            hdd_text = (f"Точка подключения: {hdd_info['device']}\n")
+            
+        self.hdd_info_label.setText(hdd_text)
             
         
     def create_info_screen(self, title, description, image_path=None):

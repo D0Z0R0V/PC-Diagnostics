@@ -19,4 +19,3 @@ def monitor_hdd():
     }
     
     return hdd_info
-
