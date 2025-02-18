@@ -296,7 +296,13 @@ class MainWindow(QMainWindow):
             self.hdd_info_label.setText("Ошибка: Не удалось получить данные о диске(HDD)")
             
         else:
-            hdd_text = (f"Точка подключения: {hdd_info['device']}\n")
+            hdd_text = (
+                f"Процентр использования: {hdd_info['percent']}%\n"
+                f"Точка подключения: {hdd_info['device']}\n"
+                f"Тип системы: {hdd_info['file_sys']}\n"
+                f"Объем диска: {hdd_info['size']} \n"
+                f"Использовано памяти: {hdd_info['used']}\n"
+                f"Свободно памяти: {hdd_info['free']}\n")
             
         self.hdd_info_label.setText(hdd_text)
             
