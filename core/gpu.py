@@ -25,4 +25,3 @@ def monitor_gpu():
 
     nvmlShutdown()  # Завершаем работу с NVML
     return gpu_list  # Возвращаем список с информацией о всех видеокартах
-

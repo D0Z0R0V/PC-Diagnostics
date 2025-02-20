@@ -14,17 +14,17 @@ def generate_data(num_rows):
         for _ in range(num_rows):
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             cpu_usage = round(random.uniform(0,100), 1)
-            cpu_temp = round(random.uniform(30,90), 1)
+            cpu_temp = round(random.uniform(30,105), 1)
             gpu_usage = round(random.uniform(0,100), 1)
-            gpu_temp = round(random.uniform(40,90), 1)
+            gpu_temp = round(random.uniform(40,105), 1)
             disk_usage = round(random.uniform(10,98), 1)
             ram_usage = round(random.uniform(20,98), 1)
             
-            if cpu_usage < 70 and gpu_usage < 80 and ram_usage < 65 and disk_usage < 80:
+            if cpu_temp < 70 and gpu_temp < 80 and ram_usage < 65 and disk_usage < 80:
                 system_state = "Normal"
-            elif cpu_usage >= 70 and cpu_usage < 90 and gpu_usage >= 80 and gpu_usage < 80 and ram_usage >= 65 and ram_usage < 80:
+            elif cpu_temp >= 70 and cpu_temp < 90 and gpu_temp >= 80 and gpu_temp < 85:
                 system_state = "Warning"
-            else:
+            elif cpu_temp > 90 and gpu_temp > 85 and ram_usage > 81:
                 system_state = "Critical"
                 
             row = [timestamp, cpu_usage, cpu_temp, gpu_usage, gpu_temp, disk_usage, ram_usage, system_state]
