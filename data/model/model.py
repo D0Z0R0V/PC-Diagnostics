@@ -6,27 +6,19 @@ from sklearn.metrics import accuracy_score, classification_report
 
 data = pd.read_csv('system_data.csv')
 
-# Преобразование столбца 'system_state' в числовой формат
-# Замена текстовых значений на числовые метки
 data['system_state'] = data['system_state'].map({'Normal': 0, 'Warning': 1, 'Critical': 2})
 
-
 features = ['cpu_usage', 'cpu_temp', 'gpu_usage', 'gpu_temp', 'disk_usage', 'ram_usage']
-
 
 X = data[features]
 y = data['system_state']
 
-# Разделение данных на обучающую и тестовую выборки
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
 
 model = GaussianNB()
 
-# Обучение модели на обучающей выборке
 model.fit(X_train, y_train)
 
-# Прогнозирование на тестовой выборке
 y_pred = model.predict(X_test)
 
 accuracy = accuracy_score(y_test, y_pred)
