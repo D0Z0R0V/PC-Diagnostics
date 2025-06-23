@@ -299,20 +299,27 @@ class MainWindow(QMainWindow):
     
     def CPU_info_screen(self, title, description, image_path=None):
         screen = QWidget()
-        layout = QVBoxLayout(screen)
+        main_layout = QVBoxLayout(screen)
 
+        # Изображение процессора
         image_label = QLabel(self)
         pixmap = QPixmap("gui/img/cpu.png")
         image_label.setPixmap(pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio))
-        layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
+        # Заголовок
         title_label = QLabel("<h1>Процессор</h1>", self)
-        layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        self.cpu_info_label = QLabel("Загрузка: --%", self)
-        layout.addWidget(self.cpu_info_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        # Создаем скроллируемую область для данных
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        content = QWidget()
+        self.cpu_info_layout = QVBoxLayout(content)
+        scroll.setWidget(content)
+        main_layout.addWidget(scroll)
 
-        # Запуск таймера для обновления
+        # Таймер обновления
         self.cpu_timer = QTimer()
         self.cpu_timer.timeout.connect(self.update_cpu_info)
         self.cpu_timer.start(500)  # обновление каждые 0.5 секунды
@@ -320,30 +327,63 @@ class MainWindow(QMainWindow):
         return screen
 
     def update_cpu_info(self):
-        """Обновление информации о процессоре."""
+        """Обновление информации о процессоре с улучшенным дизайном"""
         cpu_data = get_cpu_info()  # Получаем словарь
 
+        # Очищаем контейнер перед обновлением
+        while self.cpu_info_layout.count():
+            item = self.cpu_info_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+
         if "error" in cpu_data:
-            cpu_text = f"Ошибка: {cpu_data['error']}"
-        else:
-            cpu_text = (
-                f"Загрузка: {cpu_data['usage']}%\n"
-                f"Ядер: {cpu_data['cores']}\n"
-                f"Потоков: {cpu_data['threads']}\n"
-                f"Частота: {cpu_data['freq_current']} MHz (мин {cpu_data['freq_min']}, макс {cpu_data['freq_max']})\n"
-            )
+            error_label = QLabel(f"Ошибка: {cpu_data['error']}")
+            error_label.setStyleSheet("color: red; font-weight: bold;")
+            self.cpu_info_layout.addWidget(error_label, alignment=Qt.AlignmentFlag.AlignCenter)
+            return
 
-            # Добавляем температуру, если есть
-            if cpu_data["temperatures"]:
-                temp_texts = []
-                for sensor, entries in cpu_data["temperatures"].items():
-                    for entry in entries:
-                        temp_texts.append(
-                            f"{entry['label']}: {entry['current']}°C (макс {entry['high']}, крит {entry['critical']})"
-                        )
-                cpu_text += "\nТемпературы:\n" + "\n".join(temp_texts)
+        # Основные параметры
+        main_group = QGroupBox("Основные параметры")
+        main_layout = QFormLayout()
+        main_layout.addRow("Загрузка:", self._create_colored_label(f"{cpu_data['usage']}%", 'percent'))
+        main_layout.addRow("Ядра:", QLabel(str(cpu_data['cores'])))
+        main_layout.addRow("Потоки:", QLabel(str(cpu_data['threads'])))
+        main_layout.addRow("Текущая частота:", QLabel(f"{cpu_data['freq_current']} MHz"))
+        main_layout.addRow("Минимальная частота:", QLabel(f"{cpu_data['freq_min']} MHz"))
+        main_layout.addRow("Максимальная частота:", QLabel(f"{cpu_data['freq_max']} MHz"))
+        main_group.setLayout(main_layout)
+        self.cpu_info_layout.addWidget(main_group)
 
-        self.cpu_info_label.setText(cpu_text)
+        # Температуры
+        if cpu_data["temperatures"]:
+            temp_group = QGroupBox("Температуры")
+            temp_layout = QFormLayout()
+            
+            for sensor, entries in cpu_data["temperatures"].items():
+                # Добавляем разделитель между сенсорами
+                if temp_layout.rowCount() > 0:
+                    separator = QFrame()
+                    separator.setFrameShape(QFrame.Shape.HLine)
+                    separator.setFrameShadow(QFrame.Shadow.Sunken)
+                    temp_layout.addRow(separator)
+                
+                for entry in entries:
+                    label = entry['label']
+                    current = entry['current']
+                    high = entry.get('high', 'N/A')
+                    critical = entry.get('critical', 'N/A')
+                    
+                    temp_layout.addRow(
+                        f"{label}:", 
+                        self._create_colored_label(f"{current}°C (макс: {high}, крит: {critical})", 'temp')
+                    )
+            
+            temp_group.setLayout(temp_layout)
+            self.cpu_info_layout.addWidget(temp_group)
+
+        # Добавляем растяжку в конце
+        self.cpu_info_layout.addStretch()
         
     def GPU_info_screen(self, title, description, image_path=None):
         screen = QWidget()
@@ -487,10 +527,10 @@ class MainWindow(QMainWindow):
         """)
         
         # Кнопка запуска
-        self.diagnose_btn = QPushButton("🚀 Запустить диагностику")
+        self.diagnose_btn = QPushButton("Запустить диагностику")
         self.diagnose_btn.setStyleSheet("""
             QPushButton {
-                background-color: #2ecc71;
+                background-color: #474A51;
                 color: white;
                 border: none;
                 padding: 10px;
@@ -498,7 +538,7 @@ class MainWindow(QMainWindow):
                 border-radius: 5px;
             }
             QPushButton:hover {
-                background-color: #27ae60;
+                background-color: #A9A9AA;
             }
         """)
         self.diagnose_btn.setFixedHeight(50)
@@ -934,17 +974,32 @@ class MainWindow(QMainWindow):
         label = QLabel(str(value))
         
         if value_type == 'percent':
-            if value > 90:
+            try:
+                num = float(value) if isinstance(value, (int, float)) else float(value.replace('%', ''))
+            except ValueError:
+                num = 0
+                
+            if num > 90:
                 label.setStyleSheet("color: red; font-weight: bold;")
-            elif value > 70:
+            elif num > 70:
                 label.setStyleSheet("color: orange;")
             else:
                 label.setStyleSheet("color: green;")
+                
         elif value_type == 'temp':
-            if value > 75:
+            try:
+                num = float(value) if isinstance(value, (int, float)) else float(value.split('°')[0])
+            except (ValueError, IndexError):
+                num = 0
+                
+            if num > 85:
                 label.setStyleSheet("color: red; font-weight: bold;")
-            elif value > 60:
+            elif num > 75:
+                label.setStyleSheet("color: red;")
+            elif num > 65:
                 label.setStyleSheet("color: orange;")
+            elif num > 50:
+                label.setStyleSheet("color: yellow;")
             else:
                 label.setStyleSheet("color: green;")
         
