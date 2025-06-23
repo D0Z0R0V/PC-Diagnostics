@@ -2,7 +2,7 @@ from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer, QSize, QProcess
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QWidget, QStackedWidget, QListWidget, QGridLayout, QListWidgetItem, QMenu,
-    QProgressBar, QMessageBox, QGroupBox, QScrollArea, QFormLayout
+    QProgressBar, QMessageBox, QGroupBox, QScrollArea, QFormLayout, QFrame
 )
 from PyQt6.QtGui import QPixmap, QAction, QIcon
 
@@ -13,7 +13,7 @@ from core.ram import monitor_ram
 from core.hdd import monitor_hdd
 
 
-import sys, json, time, random, math, multiprocessing
+import sys, json, time, random, math, multiprocessing, subprocess
 
 
 class DiagnosticThread(QThread):
@@ -466,51 +466,82 @@ class MainWindow(QMainWindow):
         self.hdd_info_label.setText(hdd_text)
         
     def create_diagnostic_screen(self, title, description, image_path=None):
-        """Создаем экран диагностики (заменяет заглушку)"""
+        """Создаем экран диагностики с улучшенным дизайном"""
         screen = QWidget()
-        layout = QVBoxLayout(screen)
+        main_layout = QVBoxLayout(screen)
         
-        # Стили
+        # Стилизация
         self.setStyleSheet("""
             QGroupBox {
                 font-size: 14px;
-                font-weight: bold;
-                border: 1px solid gray;
+                border: 1px solid #ddd;
                 border-radius: 5px;
                 margin-top: 10px;
+                padding-top: 15px;
             }
-            QLabel { font-size: 13px; }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 3px;
+            }
         """)
         
         # Кнопка запуска
-        self.diagnose_btn = QPushButton("Запустить диагностику")
-        self.diagnose_btn.setFixedHeight(40)
+        self.diagnose_btn = QPushButton("🚀 Запустить диагностику")
+        self.diagnose_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #2ecc71;
+                color: white;
+                border: none;
+                padding: 10px;
+                font-size: 16px;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #27ae60;
+            }
+        """)
+        self.diagnose_btn.setFixedHeight(50)
         self.diagnose_btn.clicked.connect(self.start_diagnosis)
-        layout.addWidget(self.diagnose_btn)
         
         # Прогресс-бар
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setTextVisible(True)
         self.progress_bar.setVisible(False)
-        layout.addWidget(self.progress_bar)
         
-        # Группа для результатов
+        # Основная область с прокруткой
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        content = QWidget()
+        content_layout = QVBoxLayout(content)
+        
+        # Группа результатов
         self.results_group = QGroupBox("Результаты диагностики")
         results_layout = QVBoxLayout()
         
-        self.results_label = QLabel("Диагностика не проводилась")
-        self.results_label.setWordWrap(True)
-        results_layout.addWidget(self.results_label)
+        # Подгруппы для каждого компонента
+        self.cpu_group = QGroupBox("Процессор")
+        self.gpu_group = QGroupBox("Видеокарта")
+        self.ram_group = QGroupBox("Память")
+        self.disk_group = QGroupBox("Диск")
+        self.verdict_group = QGroupBox("Общий статус")
         
-        self.verdict_label = QLabel()
-        self.verdict_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        results_layout.addWidget(self.verdict_label)
+        # Заполняем пустые группы
+        for group in [self.cpu_group, self.gpu_group, self.ram_group, self.disk_group, self.verdict_group]:
+            group.setLayout(QVBoxLayout())
+            group.layout().addWidget(QLabel("Данные отсутствуют"))
+            results_layout.addWidget(group)
         
         self.results_group.setLayout(results_layout)
-        layout.addWidget(self.results_group)
+        content_layout.addWidget(self.results_group)
+        scroll.setWidget(content)
         
-        # Инициализация модели
+        # Собираем основной layout
+        main_layout.addWidget(self.diagnose_btn)
+        main_layout.addWidget(self.progress_bar)
+        main_layout.addWidget(scroll)
+        
         self.diagnostic_model = DiagnosticModel()
         
         return screen
@@ -519,53 +550,128 @@ class MainWindow(QMainWindow):
         """Запуск диагностики в отдельном потоке"""
         self.diagnose_btn.setEnabled(False)
         self.progress_bar.setVisible(True)
-        self.results_label.setText("Идет диагностика...")
+        
+        # Очищаем предыдущие результаты
+        for group in [self.cpu_group, self.gpu_group, self.ram_group, self.disk_group, self.verdict_group]:
+            while group.layout().count():
+                item = group.layout().takeAt(0)
+                if item.widget():
+                    item.widget().deleteLater()
+            label = QLabel("Идет сбор данных...")
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            group.layout().addWidget(label)
         
         self.diagnostic_thread = DiagnosticThread(self.diagnostic_model)
-        self.diagnostic_thread.update_signal.connect(self.update_progress)
+        self.diagnostic_thread.update_signal.connect(
+            lambda v, m: self.update_progress(v, m))
         self.diagnostic_thread.finished_signal.connect(self.show_results)
         self.diagnostic_thread.start()
-
-    def update_progress(self, value, message):
-        """Обновление прогресс-бара"""
-        self.progress_bar.setValue(value)
-        self.progress_bar.setFormat(f"{message} {value}%")
+        
+        self.status_timer = QTimer()
+        self.status_timer.timeout.connect(self.update_system_status)
+        self.status_timer.start(1000)
 
     def show_results(self, data, verdict):
-        """Показ результатов диагностики"""
+        """Показывает результаты в новом формате"""
         self.diagnose_btn.setEnabled(True)
         self.progress_bar.setVisible(False)
         
-        # Формируем текст с результатами
-        result_text = ""
-        if data:
-            cpu = data['CPU']
-            gpu = data['GPU'][0] if data['GPU'] else {}
-            ram = data['RAM']
-            hdd = data['HDD']
-            
-            result_text = f"""
-            <b>Процессор:</b><br>
-            - Загрузка: {cpu.get('usage', 'N/A')}%<br>
-            - Температура: {cpu.get('temperatures', {}).get('coretemp', [{}])[0].get('current', 'N/A')}°C<br><br>
-            
-            <b>Видеокарта:</b><br>
-            - Загрузка: {gpu.get('load', 'N/A')}%<br>
-            - Температура: {gpu.get('temperature', 'N/A')}°C<br><br>
-            
-            <b>Память:</b><br>
-            - Использовано: {ram.get('percent', 'N/A')}%<br>
-            - Доступно: {ram.get('free', 'N/A')} ГБ<br><br>
-            
-            <b>Диск:</b><br>
-            - Использовано: {hdd.get('percent', 'N/A')}%<br>
-            """
+        # Очищаем предыдущие результаты
+        for group in [self.cpu_group, self.gpu_group, self.ram_group, self.disk_group, self.verdict_group]:
+            layout = group.layout()
+            while layout.count():
+                item = layout.takeAt(0)
+                widget = item.widget()
+                if widget:
+                    widget.deleteLater()
         
-        self.results_label.setText(result_text)
+        # Цвет статуса
+        color = {
+            "Normal": "#2ecc71",
+            "Warning": "#f39c12",
+            "Critical": "#e74c3c"
+        }.get(verdict, "#3498db")
         
-        # Устанавливаем вердикт с цветом
-        color = "#2ECC71" if verdict == "Normal" else "#F39C12" if verdict == "Warning" else "#E74C3C"
-        self.verdict_label.setText(f"<span style='color: {color}; font-size: 18px;'>Статус: {verdict}</span>")
+        # Заполняем данные
+        if not data:
+            for group in [self.cpu_group, self.gpu_group, self.ram_group, self.disk_group]:
+                group.layout().addWidget(QLabel("Ошибка сбора данных"))
+            return
+        
+        # Процессор
+        cpu = data['CPU']
+        cpu_widget = QWidget()
+        cpu_layout = QFormLayout(cpu_widget)
+        cpu_layout.addRow("Загрузка:", QLabel(f"{cpu.get('usage', 'N/A')}%"))
+        if cpu.get('temperatures'):
+            for sensor, entries in cpu['temperatures'].items():
+                for entry in entries:
+                    cpu_layout.addRow(
+                        f"{entry['label']}:",
+                        QLabel(f"{entry['current']}°C")
+                    )
+        self.cpu_group.layout().addWidget(cpu_widget)
+        
+        # Видеокарта
+        gpu = data['GPU'][0] if data['GPU'] else {}
+        gpu_widget = QWidget()
+        gpu_layout = QFormLayout(gpu_widget)
+        gpu_layout.addRow("Загрузка:", QLabel(f"{gpu.get('load', 'N/A')}%"))
+        gpu_layout.addRow("Температура:", QLabel(f"{gpu.get('temperature', 'N/A')}°C"))
+        self.gpu_group.layout().addWidget(gpu_widget)
+        
+        # Память
+        ram = data['RAM']
+        ram_widget = QWidget()
+        ram_layout = QFormLayout(ram_widget)
+        ram_layout.addRow("Использовано:", QLabel(f"{ram.get('percent', 'N/A')}%"))
+        ram_layout.addRow("Доступно:", QLabel(f"{ram.get('free', 'N/A')} ГБ"))
+        self.ram_group.layout().addWidget(ram_widget)
+        
+        # Диск
+        hdd = data['HDD']
+        disk_widget = QWidget()
+        disk_layout = QFormLayout(disk_widget)
+        disk_layout.addRow("Использовано:", QLabel(f"{hdd.get('percent', 'N/A')}%"))
+        self.disk_group.layout().addWidget(disk_widget)
+        
+        # Статус
+        verdict_label = QLabel(f"""
+            <div style='color: {color}; font-size: 18px; text-align: center;'>
+                <b>Статус: {verdict}</b>
+            </div>
+        """)
+        verdict_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        
+        details_btn = QPushButton("ℹ️ Подробнее о диагностике")
+        details_btn.setStyleSheet(f"""
+            QPushButton {{
+                background-color: {color};
+                color: white;
+                border: none;
+                padding: 8px;
+                border-radius: 4px;
+            }}
+        """)
+        details_btn.clicked.connect(lambda: self.show_diagnosis_details(verdict))
+        
+        self.verdict_group.layout().addWidget(verdict_label)
+        self.verdict_group.layout().addWidget(details_btn)
+            
+    def show_diagnosis_details(self, verdict):
+        """Подробная информация о диагностике"""
+        details = {
+            "Normal": "Все параметры системы в пределах нормы. Температуры и загрузка компонентов не превышают критических значений.",
+            "Warning": "Обнаружены параметры, близкие к предельным. Рекомендуется проверить:\n- Температуру процессора/видеокарты\n- Загрузку оперативной памяти\n- Свободное место на диске",
+            "Critical": "Критические значения параметров! Немедленно:\n1. Дайте системе остыть\n2. Закройте ресурсоемкие приложения\n3. Проверьте систему на вирусы"
+        }.get(verdict, "Неизвестный статус диагностики")
+        
+        QMessageBox.information(
+            self,
+            "Подробности диагностики",
+            f"<b>Объяснение статуса '{verdict}':</b><br><br>{details}",
+            QMessageBox.StandardButton.Ok
+        )
             
     
     def create_testing_screen(self, title, description, image_path=None):
@@ -627,7 +733,7 @@ class MainWindow(QMainWindow):
     def start_test(self, test_type):
         """Запуск теста"""
         if hasattr(self, 'test_process') and self.test_process:
-            if self.test_process.state() == QProcess.ProcessState.Running:
+            #if self.test_process.state() == QProcess.ProcessState.Running:
                 self.test_process.terminate()
         # Сохраняем состояние до теста
         self.before_state = self.get_system_state()
@@ -656,19 +762,33 @@ class MainWindow(QMainWindow):
         # Таймер прогресса
         self.test_time = 0
         self.test_timer = QTimer()
-        self.test_timer.timeout.connect(lambda: self.update_progress(test_type))
+        self.test_timer.timeout.connect(
+            lambda: self.update_progress(test_type))
         self.test_timer.start(1000)
 
-    def update_progress(self, test_type):
-        """Обновление прогресса"""
-        self.test_time += 1
-        progress = min(100, int((self.test_time / 60) * 100))
-        self.test_progress.setValue(progress)
-        
-        if self.test_time >= 60:
-            self.test_timer.stop()
-            if self.test_process.state() == QProcess.ProcessState.Running:
-                self.test_process.terminate()
+    def update_progress(self, *args, test_type=None):
+        """Универсальный метод для обновления прогресса
+        Args:
+            - Для диагностики: (value, message)
+            - Для тестирования: (test_type)
+        """
+        if test_type is None:
+            # Режим диагностики (args = value, message)
+            value, message = args
+            self.progress_bar.setValue(value)
+            self.progress_bar.setFormat(f"{message} {value}%")
+        else:
+            # Режим тестирования (args пустые, test_type содержит тип теста)
+            if not hasattr(self, 'test_time'):
+                self.test_time = 0
+            self.test_time += 1
+            progress = min(100, int((self.test_time / 60) * 100))
+            self.test_progress.setValue(progress)
+            
+            if self.test_time >= 60:
+                self.test_timer.stop()
+                if hasattr(self, 'test_process') and self.test_process.state() == QProcess.ProcessState.Running:
+                    self.test_process.terminate()
 
     def on_test_finished(self, test_type):
         """Завершение теста"""
@@ -821,7 +941,7 @@ class MainWindow(QMainWindow):
             else:
                 label.setStyleSheet("color: green;")
         elif value_type == 'temp':
-            if value > 80:
+            if value > 75:
                 label.setStyleSheet("color: red; font-weight: bold;")
             elif value > 60:
                 label.setStyleSheet("color: orange;")
@@ -831,22 +951,34 @@ class MainWindow(QMainWindow):
         return label
 
     def get_system_state(self):
-        """Получение полного состояния системы"""
+        """Получение полного состояния системы с обработкой ошибок прав доступа"""
         try:
             cpu_info = get_cpu_info()
             ram_info = monitor_ram()
             gpu_info = monitor_gpu()
             hdd_info = monitor_hdd()
             
-            # Дополняем данные RAM
+            # Дополняем данные RAM (если доступно)
             if ram_info and isinstance(ram_info, dict):
                 try:
-                    output = subprocess.check_output(['dmidecode', '--type', 'memory']).decode('utf-8')
-                    ram_info['type'] = next((line.split(':')[1].strip() for line in output.split('\n') if 'Type:' in line), 'Unknown')
-                    ram_info['speed'] = next((line.split(':')[1].strip().split()[0] for line in output.split('\n') if 'Speed:' in line), 'Unknown')
-                except:
-                    ram_info['type'] = 'N/A'
-                    ram_info['speed'] = 'N/A'
+                    # Пытаемся получить информацию о памяти, но не требуем прав root
+                    output = subprocess.check_output(
+                        ['dmidecode', '--type', 'memory'], 
+                        stderr=subprocess.DEVNULL  # Подавляем ошибки
+                    ).decode('utf-8', errors='ignore')
+                    
+                    ram_info['type'] = next(
+                        (line.split(':')[1].strip() for line in output.split('\n') 
+                        if 'Type:' in line), 'Недоступно без прав root'
+                    )
+                    ram_info['speed'] = next(
+                        (line.split(':')[1].strip().split()[0] for line in output.split('\n') 
+                        if 'Speed:' in line), 'Недоступно без прав root'
+                    )
+                except Exception:
+                    # Если не получилось - используем значения по умолчанию
+                    ram_info['type'] = 'Недоступно'
+                    ram_info['speed'] = 'Недоступно'
             
             # Обработка данных GPU
             gpu_data = {}
@@ -860,13 +992,22 @@ class MainWindow(QMainWindow):
                 'GPU': gpu_data,
                 'HDD': hdd_info
             }
+
+        except PermissionError:
+            # Возвращаем данные, которые можно получить без прав root
+            return {
+                'CPU': get_cpu_info(),
+                'RAM': monitor_ram(),
+                'GPU': monitor_gpu()[0] if monitor_gpu() else {},
+                'HDD': monitor_hdd()
+            }
         except Exception as e:
             print(f"Ошибка получения данных системы: {str(e)}")
             return {
                 'CPU': {'error': str(e)},
-                'RAM': {},
-                'GPU': {},
-                'HDD': {}
+                'RAM': {'error': str(e)},
+                'GPU': {'error': str(e)},
+                'HDD': {'error': str(e)}
             }
 
     def update_system_status(self):
@@ -949,6 +1090,5 @@ class MainWindow(QMainWindow):
         about_text = "Это приложение для диагностики системы.\nРазработано для дипломного проекта."
         self.general_info_screen.layout().itemAt(1).widget().setText(about_text)
         self.stacked_widget.setCurrentWidget(self.general_info_screen)
-
 
 
