@@ -1,6 +1,6 @@
 from PyQt6.QtCore import Qt, QThread, pyqtSignal, QTimer, QSize, QProcess
 from PyQt6.QtWidgets import (
-    QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QLabel,
+    QApplication, QSizePolicy, QMainWindow, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QWidget, QStackedWidget, QListWidget, QGridLayout, QListWidgetItem, QMenu,
     QProgressBar, QMessageBox, QGroupBox, QScrollArea, QFormLayout, QFrame
 )
@@ -11,6 +11,8 @@ from core.cpu import get_cpu_info
 from core.gpu import monitor_gpu
 from core.ram import monitor_ram
 from core.hdd import monitor_hdd
+from core.moth import get_motherboard_info
+from core.volt import get_voltage_info
 
 
 import sys, json, time, random, math, multiprocessing, subprocess
@@ -62,23 +64,39 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Диагностика системы")
+        self.setMinimumSize(800, 600)  # Минимальный размер окна
         self.setGeometry(100, 100, 1200, 800)
 
+        # Главный виджет и макет
         main_widget = QWidget()
         main_layout = QHBoxLayout(main_widget)
+        main_layout.setContentsMargins(5, 5, 5, 5)  # Отступы
+        main_layout.setSpacing(10)  # Расстояние между элементами
 
+        # Боковое меню
         self.menu_list = QListWidget()
-        self.menu_list.setMaximumWidth(200)
+        self.menu_list.setMinimumWidth(180)  # Минимальная ширина
+        self.menu_list.setMaximumWidth(220)  # Максимальная ширина
+        self.menu_list.setSizePolicy(
+            QSizePolicy.Policy.Fixed, 
+            QSizePolicy.Policy.Expanding
+        )
         self.menu_list.itemClicked.connect(self.switch_screen)
         self.init_menu_list()
         main_layout.addWidget(self.menu_list)
 
+        # Центральная область с контентом
         self.stacked_widget = QStackedWidget()
-        main_layout.addWidget(self.stacked_widget)
-        self.init_screens()
+        self.stacked_widget.setSizePolicy(
+            QSizePolicy.Policy.Expanding, 
+            QSizePolicy.Policy.Expanding
+        )
+        main_layout.addWidget(self.stacked_widget, 1)  # Коэффициент растяжения 1
 
         self.setCentralWidget(main_widget)
         self.create_menus()
+        
+        self.init_screens()
 
     def init_menu_list(self):
         """Инициализация левого меню с иконками."""
@@ -136,8 +154,8 @@ class MainWindow(QMainWindow):
         self.memory_screen = self.RAM_info_screen("Оперативная память", "Информация о памяти.", "gui/img/ram.png")
         self.disk_screen = self.HDD_info_screen("Дисковая подсистема", "Информация о дисках.", "gui/img/disk.png")
         self.gpu_screen = self.GPU_info_screen("Видеокарта", "Информация о видеокарте.", "gui/img/gpu.png")
-        self.motherboard_screen = self.create_info_screen("Материнская плата", "Информация о материнской плате.", "gui/img/motherboard.png")
-        self.voltage_screen = self.create_info_screen("Напряжение", "Информация о напряжении.", "gui/img/volt.png")
+        self.motherboard_screen = self.MB_info_screen("Материнская плата", "Информация о материнской плате.", "gui/img/motherboard.png")
+        self.voltage_screen = self.Voltage_info_screen("Напряжение", "Информация о напряжении.", "gui/img/volt.png")
         self.diagnostic_screen = self.create_diagnostic_screen("Диагностика", "Режим диагностики системы.", "gui/img/diag.png")
         self.testing_screen = self.create_testing_screen("Тестирование", "Тестирование системы на устойчивость.", "gui/img/test.png")
         
@@ -155,7 +173,13 @@ class MainWindow(QMainWindow):
     def create_general_screen(self):
         """Создаем экран 'Общие сведения' с сеткой карточек."""
         screen = QWidget()
+        screen.setSizePolicy(
+            QSizePolicy.Policy.Expanding, 
+            QSizePolicy.Policy.Expanding
+        )
+        
         layout = QGridLayout(screen)
+        layout.setSpacing(15)  # Расстояние между карточками
 
         cards = [
             ("Процессор", "gui/img/cpu.png"),
@@ -168,15 +192,38 @@ class MainWindow(QMainWindow):
             ("Тестирование", "gui/img/test.png"),
         ]
 
+        # Адаптивное размещение карточек
+        columns = max(2, min(4, self.width() // 250))  # Количество колонок в зависимости от ширины окна
+        
         for i, (title, icon_path) in enumerate(cards):
-            card = QPushButton()
-            card.setText(title)
-            card.setStyleSheet("text-align: center;")
+            card = QPushButton(title)
+            card.setMinimumSize(150, 150)
+            card.setSizePolicy(
+                QSizePolicy.Policy.Expanding, 
+                QSizePolicy.Policy.Expanding
+            )
+            card.setStyleSheet("""
+                QPushButton {
+                    text-align: center;
+                    font-weight: bold;
+                    padding: 10px;
+                    border-radius: 8px;
+                    border: 1px solid #ccc;
+                }
+                QPushButton:hover {
+                    background-color: #f0f0f0;
+                }
+            """)
+            
             if icon_path:
                 card.setIcon(QIcon(icon_path))
                 card.setIconSize(QSize(80, 80))
+            
             card.clicked.connect(lambda _, t=title: self.switch_screen_by_title(t))
-            layout.addWidget(card, i // 4, i % 4)
+            
+            row = i // columns
+            col = i % columns
+            layout.addWidget(card, row, col)
 
         return screen
     
@@ -429,6 +476,132 @@ class MainWindow(QMainWindow):
             )
 
         self.gpu_info_label.setText(gpu_text)
+        
+    def MB_info_screen(self, title, description, image_path=None):
+        screen = QWidget()
+        main_layout = QVBoxLayout(screen)
+
+        # Изображение материнской платы
+        image_label = QLabel(self)
+        pixmap = QPixmap("gui/img/motherboard.png")
+        image_label.setPixmap(pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio))
+        main_layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # Заголовок
+        title_label = QLabel("<h1>Материнская плата</h1>", self)
+        main_layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # Создаем скроллируемую область для данных
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        content = QWidget()
+        self.mb_info_layout = QVBoxLayout(content)
+        scroll.setWidget(content)
+        main_layout.addWidget(scroll)
+
+        # Обновляем информацию
+        self.update_mb_info()
+
+        return screen
+
+    def update_mb_info(self):
+        """Обновление информации о материнской плате"""
+        mb_data = get_motherboard_info()
+
+        # Очищаем контейнер
+        while self.mb_info_layout.count():
+            item = self.mb_info_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+
+        if "error" in mb_data:
+            error_label = QLabel(f"Ошибка: {mb_data['error']}")
+            error_label.setStyleSheet("color: red; font-weight: bold;")
+            self.mb_info_layout.addWidget(error_label, alignment=Qt.AlignmentFlag.AlignCenter)
+            return
+
+        # Основные параметры платы
+        board_group = QGroupBox("Параметры платы")
+        board_layout = QFormLayout()
+        board_layout.addRow("Производитель:", QLabel(mb_data.get('manufacturer', 'Неизвестно')))
+        board_layout.addRow("Модель:", QLabel(mb_data.get('product', 'Неизвестно')))
+        board_layout.addRow("Версия:", QLabel(mb_data.get('version', 'Неизвестно')))
+        board_layout.addRow("Серийный номер:", QLabel(mb_data.get('serial', 'Неизвестно')))
+        board_group.setLayout(board_layout)
+        self.mb_info_layout.addWidget(board_group)
+
+        # Информация о BIOS
+        bios_group = QGroupBox("BIOS")
+        bios_layout = QFormLayout()
+        bios_layout.addRow("Производитель:", QLabel(mb_data.get('bios_vendor', 'Неизвестно')))
+        bios_layout.addRow("Версия:", QLabel(mb_data.get('bios_version', 'Неизвестно')))
+        bios_layout.addRow("Дата:", QLabel(mb_data.get('bios_date', 'Неизвестно')))
+        bios_group.setLayout(bios_layout)
+        self.mb_info_layout.addWidget(bios_group)
+
+        # Добавляем растяжку в конце
+        self.mb_info_layout.addStretch()
+
+    def Voltage_info_screen(self, title, description, image_path=None):
+        screen = QWidget()
+        layout = QVBoxLayout(screen)
+        
+        image_label = QLabel(self)
+        pixmap = QPixmap("gui/img/volt.png")
+        image_label.setPixmap(pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio))
+        layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        
+        title_label = QLabel("<h1>Напряжение</h1>", self)
+        layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        
+        self.voltage_info_label = QLabel("Загрузка данных...", self)
+        layout.addWidget(self.voltage_info_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        
+        self.voltage_timer = QTimer()
+        self.voltage_timer.timeout.connect(self.update_voltage_info)
+        self.voltage_timer.start(2000)  # Обновление каждые 2 секунды
+        
+        return screen
+    
+    def update_voltage_info(self):
+        voltage_info = get_voltage_info()
+        
+        if not voltage_info:
+            self.voltage_info_label.setText("Ошибка: Не удалось получить данные о напряжении")
+            return
+        
+        if "error" in voltage_info:
+            self.voltage_info_label.setText(f"Ошибка: {voltage_info['error']}")
+            return
+        
+        text = "<b>Состояние батареи:</b>\n"
+        battery = voltage_info.get('battery', {})
+        
+        if battery:
+            text += f"Питание от сети: {battery.get('power_plugged', 'Нет данных')}\n"
+            text += f"Заряд: {battery.get('percent', 'Нет данных')}%\n"
+            
+            secsleft = battery.get('secsleft')
+            if secsleft is not None:
+                if secsleft == -1:
+                    text += "Оставшееся время: Расчитывается...\n"
+                elif secsleft == -2:
+                    text += "Оставшееся время: Неограничено\n"
+                else:
+                    mins, secs = divmod(secsleft, 60)
+                    hours, mins = divmod(mins, 60)
+                    text += f"Оставшееся время: {hours:02d}:{mins:02d}:{secs:02d}\n"
+        else:
+            text += "Батарея не обнаружена\n"
+        
+        text += "\n<b>Напряжения компонентов:</b>\n"
+        voltages = voltage_info.get('voltages', {})
+        text += f"CPU: {voltages.get('cpu_voltage', 'Нет данных')}\n"
+        text += f"GPU: {voltages.get('gpu_voltage', 'Нет данных')}\n"
+        text += f"RAM: {voltages.get('ram_voltage', 'Нет данных')}"
+        
+        self.voltage_info_label.setText(text)
         
     def RAM_info_screen(self, title, description, image_path=None):
         screen = QWidget()
