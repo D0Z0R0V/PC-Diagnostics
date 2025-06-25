@@ -119,33 +119,200 @@ class MainWindow(QMainWindow):
             self.menu_list.addItem(item)
 
     def create_menus(self):
-        """Создаем верхнее меню приложения."""
+        """Создаем профессиональное верхнее меню приложения."""
         menu_bar = self.menuBar()
-
-        # Файл
+        
+        # Стилизация меню
+        menu_bar.setStyleSheet("""
+            QMenuBar {
+                background-color: #2D2D2D;
+                color: white;
+                padding: 5px;
+                border-bottom: 1px solid #555;
+            }
+            QMenuBar::item {
+                background-color: transparent;
+                padding: 5px 15px;
+                border-radius: 4px;
+            }
+            QMenuBar::item:selected {
+                background-color: #444;
+            }
+            QMenu {
+                background-color: #2D2D2D;
+                border: 1px solid #555;
+                color: white;
+            }
+            QMenu::item {
+                padding: 8px 25px 8px 20px;
+            }
+            QMenu::item:selected {
+                background-color: #444;
+            }
+            QMenu::separator {
+                height: 1px;
+                background-color: #555;
+                margin: 5px 0;
+            }
+        """)
+        
+        # Меню "Файл"
         file_menu = menu_bar.addMenu("Файл")
-        file_menu.addAction(QAction("Text 1", self))
-        file_menu.addAction(QAction("Text 2", self))
-
-        # Настройки
+        
+        save_action = QAction("Сохранить отчет", self)
+        save_action.setShortcut("Ctrl+S")
+        save_action.setIcon(QIcon("gui/img/save.png"))
+        
+        export_action = QAction("Экспорт данных", self)
+        export_action.setIcon(QIcon("gui/img/export.png"))
+        
+        exit_action = QAction("Выход", self)
+        exit_action.setShortcut("Ctrl+Q")
+        exit_action.setIcon(QIcon("gui/img/exit.png"))
+        exit_action.triggered.connect(QApplication.instance().quit)
+        
+        file_menu.addAction(save_action)
+        file_menu.addAction(export_action)
+        file_menu.addSeparator()
+        file_menu.addAction(exit_action)
+        
+        # Меню "Настройки"
         settings_menu = menu_bar.addMenu("Настройки")
-        settings_menu.addAction(QAction("Text 3", self))
-        settings_menu.addAction(QAction("Text 4", self))
-
-        # Отчет
+        
+        appearance_action = QAction("Внешний вид", self)
+        appearance_action.setIcon(QIcon("gui/img/appearance.png"))
+        
+        notifications_action = QAction("Уведомления", self)
+        notifications_action.setIcon(QIcon("gui/img/notifications.png"))
+        
+        system_action = QAction("Системные настройки", self)
+        system_action.setIcon(QIcon("gui/img/settings.png"))
+        
+        settings_menu.addAction(appearance_action)
+        settings_menu.addAction(notifications_action)
+        settings_menu.addSeparator()
+        settings_menu.addAction(system_action)
+        
+        # Меню "Отчет"
         report_menu = menu_bar.addMenu("Отчет")
-        report_menu.addAction(QAction("Text 5", self))
-
-        # Помощь
+        
+        generate_action = QAction("Создать отчет", self)
+        generate_action.setShortcut("Ctrl+R")
+        generate_action.setIcon(QIcon("gui/img/report.png"))
+        
+        history_action = QAction("История отчетов", self)
+        history_action.setIcon(QIcon("gui/img/history.png"))
+        
+        report_menu.addAction(generate_action)
+        report_menu.addAction(history_action)
+        
+        # Меню "Помощь"
         help_menu = menu_bar.addMenu("Помощь")
-        help_menu.addAction(QAction("Text 6", self))
-        help_menu.addAction(QAction("Text 7", self))
-
-        # О приложении
+        
+        docs_action = QAction("Документация", self)
+        docs_action.setShortcut("F1")
+        docs_action.setIcon(QIcon("gui/img/docs.png"))
+        
+        support_action = QAction("Техническая поддержка", self)
+        support_action.setIcon(QIcon("gui/img/support.png"))
+        
+        forum_action = QAction("Форум пользователей", self)
+        forum_action.setIcon(QIcon("gui/img/forum.png"))
+        
+        help_menu.addAction(docs_action)
+        help_menu.addAction(support_action)
+        help_menu.addAction(forum_action)
+        
+        # Меню "О приложении"
         about_menu = menu_bar.addMenu("О приложении")
+        
         about_action = QAction("О программе", self)
+        about_action.setIcon(QIcon("gui/img/info.png"))
         about_action.triggered.connect(self.show_about)
+        
+        update_action = QAction("Проверить обновления", self)
+        update_action.setIcon(QIcon("gui/img/update.png"))
+        
+        license_action = QAction("Лицензия", self)
+        license_action.setIcon(QIcon("gui/img/license.png"))
+        
+        contributors_action = QAction("Разработчики", self)
+        contributors_action.setIcon(QIcon("gui/img/contributors.png"))
+        
         about_menu.addAction(about_action)
+        about_menu.addAction(update_action)
+        about_menu.addAction(license_action)
+        about_menu.addAction(contributors_action)
+
+    def show_about(self):
+        """Отображение диалогового окна 'О приложении'."""
+        about_text = (
+            "<h2>Диагностика системы</h2>"
+            "<p>Версия: 1.0.0</p>"
+            "<p>Создано с помощью энтузиазма и кофе</p>"
+            "<p>Приложение для комплексной диагностики и мониторинга системы</p>"
+            "<p>© 2023 Дипломный проект</p>"
+            "<hr>"
+            "<p>Совместимо с Linux дистрибутивами:</p>"
+            "<ul>"
+            "<li>Ubuntu/Debian</li>"
+            "<li>Fedora/RHEL</li>"
+            "<li>Astra Linux</li>"
+            "<li>RED OS Linux</li>"
+            "</ul>"
+            "<p>Особенности приложения:</p>"
+            "<ul>"
+            "<li>Подробная диагностика всех компонентов системы</li>"
+            "<li>Мониторинг в реальном времени</li>"
+            "<li>Тестирование производительности</li>"
+            "<li>Генерация отчетов</li>"
+            "<li>Рекомендации по оптимизации</li>"
+            "</ul>"
+        )
+        
+        about_dialog = QMessageBox(self)
+        about_dialog.setWindowTitle("О приложении")
+        about_dialog.setIconPixmap(QPixmap("gui/img/logo.png").scaled(100, 100, 
+            Qt.AspectRatioMode.KeepAspectRatio, 
+            Qt.TransformationMode.SmoothTransformation))
+        about_dialog.setTextFormat(Qt.TextFormat.RichText)
+        about_dialog.setText(about_text)
+        
+        # Добавляем кнопку "Подробнее"
+        more_button = about_dialog.addButton("Подробнее", QMessageBox.ButtonRole.ActionRole)
+        more_button.clicked.connect(self.show_additional_info)
+        
+        about_dialog.exec()
+
+    def show_additional_info(self):
+        """Показывает дополнительную информацию о приложении"""
+        info_text = (
+            "<h3>Технические детали</h3>"
+            "<p><b>Разработка:</b></p>"
+            "<ul>"
+            "<li>Python 3.10+</li>"
+            "<li>PyQt 6</li>"
+            "<li>psutil, pysensors, nvidia-ml-py3</li>"
+            "</ul>"
+            "<p><b>Системные требования:</b></p>"
+            "<ul>"
+            "<li>Процессор: x86-64 или ARMv8</li>"
+            "<li>ОЗУ: 512 МБ минимум</li>"
+            "<li>Диск: 500 МБ свободного места</li>"
+            "</ul>"
+            "<p><b>Лицензия:</b> GNU GPL v3.0</p>"
+            "<p><b>Исходный код:</b> доступен на GitHub</p>"
+            "<hr>"
+            "<p>Приложение создано студентом в рамках дипломного проекта</p>"
+            "<p>Особая благодарность кофеину за вдохновение и поддержку</p>"
+        )
+        
+        QMessageBox.information(
+            self,
+            "Дополнительная информация",
+            info_text,
+            QMessageBox.StandardButton.Ok
+        )
 
     def init_screens(self):
         """Инициализация экранов для QStackedWidget."""
@@ -173,14 +340,16 @@ class MainWindow(QMainWindow):
     def create_general_screen(self):
         """Создаем экран 'Общие сведения' с сеткой карточек."""
         screen = QWidget()
-        screen.setSizePolicy(
-            QSizePolicy.Policy.Expanding, 
-            QSizePolicy.Policy.Expanding
-        )
+        screen_layout = QVBoxLayout(screen)
+        screen_layout.setContentsMargins(20, 20, 20, 20)
+        screen_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
-        layout = QGridLayout(screen)
-        layout.setSpacing(15)  # Расстояние между карточками
-
+        # Контейнер для карточек
+        container = QWidget()
+        grid_layout = QGridLayout(container)
+        grid_layout.setSpacing(20)
+        grid_layout.setContentsMargins(0, 0, 0, 0)
+        
         cards = [
             ("Процессор", "gui/img/cpu.png"),
             ("Оперативная память", "gui/img/ram.png"),
@@ -192,39 +361,79 @@ class MainWindow(QMainWindow):
             ("Тестирование", "gui/img/test.png"),
         ]
 
-        # Адаптивное размещение карточек
-        columns = max(2, min(4, self.width() // 250))  # Количество колонок в зависимости от ширины окна
+        # Адаптивное количество колонок
+        columns = max(2, min(4, self.width() // 250))
         
+        # Создаем карточки
         for i, (title, icon_path) in enumerate(cards):
-            card = QPushButton(title)
-            card.setMinimumSize(150, 150)
-            card.setSizePolicy(
-                QSizePolicy.Policy.Expanding, 
-                QSizePolicy.Policy.Expanding
-            )
+            # Контейнер для карточки
+            card = QFrame()
+            card.setFixedSize(180, 180)
             card.setStyleSheet("""
-                QPushButton {
-                    text-align: center;
-                    font-weight: bold;
-                    padding: 10px;
-                    border-radius: 8px;
-                    border: 1px solid #ccc;
+                QFrame {
+                    background-color: #2D2D2D;  /* Темно-серый фон */
+                    border-radius: 10px;
+                    border: 1px solid #555;  /* Темная обводка */
                 }
-                QPushButton:hover {
-                    background-color: #f0f0f0;
+                QFrame:hover {
+                    background-color: #393939;  /* Слегка светлее при наведении */
+                    border: 1px solid #777;  /* Светлее обводка при наведении */
                 }
             """)
             
-            if icon_path:
-                card.setIcon(QIcon(icon_path))
-                card.setIconSize(QSize(80, 80))
+            # Макет для содержимого карточки
+            card_layout = QVBoxLayout(card)
+            card_layout.setContentsMargins(10, 10, 10, 10)
+            card_layout.setSpacing(8)
             
-            card.clicked.connect(lambda _, t=title: self.switch_screen_by_title(t))
+            # Иконка
+            if icon_path:
+                icon_label = QLabel()
+                pixmap = QPixmap(icon_path).scaled(64, 64, 
+                    Qt.AspectRatioMode.KeepAspectRatio, 
+                    Qt.TransformationMode.SmoothTransformation
+                )
+                icon_label.setPixmap(pixmap)
+                icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                card_layout.addWidget(icon_label)
+            
+            # Текст с переносом - белый цвет для контраста
+            text_label = QLabel(title)
+            text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            text_label.setWordWrap(True)
+            text_label.setStyleSheet("""
+                font-weight: bold; 
+                font-size: 14px; 
+                border: none;
+                color: #FFFFFF;  /* Белый текст */
+            """)
+            card_layout.addWidget(text_label)
+            
+            # Растяжка для центрирования
+            card_layout.addStretch()
+            
+            # Создаем кнопку-оверлей для обработки кликов
+            overlay_button = QPushButton(card)
+            overlay_button.setGeometry(0, 0, 180, 180)
+            overlay_button.setStyleSheet("""
+                QPushButton {
+                    background-color: transparent;
+                    border: none;
+                }
+                QPushButton:hover {
+                    background-color: transparent;
+                    border: none;
+                }
+            """)
+            overlay_button.clicked.connect(lambda _, t=title: self.switch_screen_by_title(t))
             
             row = i // columns
             col = i % columns
-            layout.addWidget(card, row, col)
-
+            grid_layout.addWidget(card, row, col, alignment=Qt.AlignmentFlag.AlignCenter)
+        
+        screen_layout.addWidget(container, alignment=Qt.AlignmentFlag.AlignCenter)
+        screen_layout.addStretch()
+        
         return screen
     
     def run_test(self, test_type):
@@ -434,21 +643,25 @@ class MainWindow(QMainWindow):
         
     def GPU_info_screen(self, title, description, image_path=None):
         screen = QWidget()
-        layout = QVBoxLayout(screen)
+        main_layout = QVBoxLayout(screen)
 
-        # Изображение GPU
+        # Изображение видеокарты
         image_label = QLabel(self)
         pixmap = QPixmap("gui/img/gpu.png")
         image_label.setPixmap(pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio))
-        layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
         # Заголовок
         title_label = QLabel("<h1>Видеокарта</h1>", self)
-        layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        # Виджет для информации о видеокарте
-        self.gpu_info_label = QLabel("Загрузка: --%", self)
-        layout.addWidget(self.gpu_info_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        # Создаем скроллируемую область для данных
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        content = QWidget()
+        self.gpu_info_layout = QVBoxLayout(content)
+        scroll.setWidget(content)
+        main_layout.addWidget(scroll)
 
         # Таймер для обновления данных
         self.gpu_timer = QTimer()
@@ -456,27 +669,49 @@ class MainWindow(QMainWindow):
         self.gpu_timer.start(500)  # Обновление каждую секунду
 
         return screen
-    
+
     def update_gpu_info(self):
+        """Обновление информации о видеокарте с улучшенным дизайном"""
         gpu_data_list = monitor_gpu()
 
+        # Очищаем контейнер перед обновлением
+        while self.gpu_info_layout.count():
+            item = self.gpu_info_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+
         if not gpu_data_list:
-            self.gpu_info_label.setText("Ошибка: Не удалось получить данные о видеокарте")
+            error_label = QLabel("Ошибка: Не удалось получить данные о видеокарте")
+            error_label.setStyleSheet("color: red; font-weight: bold;")
+            self.gpu_info_layout.addWidget(error_label, alignment=Qt.AlignmentFlag.AlignCenter)
             return
 
-        # Формируем текст для всех видеокарт
-        gpu_text = ""
         for i, gpu_data in enumerate(gpu_data_list):
-            gpu_text += (
-                f"<b>GPU {i}: {gpu_data['gpu']}</b>\n"
-                f"Загрузка: {gpu_data['load']}%\n"
-                f"Загрузка памяти: {gpu_data['ram_load']}%\n"
-                f"Температура: {gpu_data['temperature']}°C\n"
-                f"Частота чипа: {gpu_data['chip']} МГц\n\n"
-            )
+            # Группа для каждой видеокарты
+            gpu_group = QGroupBox(f"Видеокарта {i}: {gpu_data.get('gpu', 'Неизвестно')}")
+            gpu_layout = QFormLayout()
+            
+            # Основные параметры
+            gpu_layout.addRow("Загрузка GPU:", self._create_colored_label(f"{gpu_data['load']}%", 'percent'))
+            gpu_layout.addRow("Загрузка памяти:", self._create_colored_label(f"{gpu_data['ram_load']}%", 'percent'))
+            gpu_layout.addRow("Температура:", self._create_colored_label(f"{gpu_data['temperature']}°C", 'temp'))
+            gpu_layout.addRow("Частота чипа:", QLabel(f"{gpu_data['chip']} МГц"))
+            
+            # Дополнительные параметры, если есть
+            if 'memory_total' in gpu_data:
+                gpu_layout.addRow("Объем памяти:", QLabel(f"{gpu_data['memory_total']} МБ"))
+            if 'memory_used' in gpu_data:
+                gpu_layout.addRow("Использовано памяти:", QLabel(f"{gpu_data['memory_used']} МБ"))
+            if 'memory_free' in gpu_data:
+                gpu_layout.addRow("Свободно памяти:", QLabel(f"{gpu_data['memory_free']} МБ"))
+            
+            gpu_group.setLayout(gpu_layout)
+            self.gpu_info_layout.addWidget(gpu_group)
 
-        self.gpu_info_label.setText(gpu_text)
-        
+        # Добавляем растяжку в конце
+        self.gpu_info_layout.addStretch()
+    
     def MB_info_screen(self, title, description, image_path=None):
         screen = QWidget()
         main_layout = QVBoxLayout(screen)
@@ -499,16 +734,18 @@ class MainWindow(QMainWindow):
         scroll.setWidget(content)
         main_layout.addWidget(scroll)
 
-        # Обновляем информацию
-        self.update_mb_info()
+        # Таймер обновления
+        self.mb_timer = QTimer()
+        self.mb_timer.timeout.connect(self.update_mb_info)
+        self.mb_timer.start(5000)  # обновление каждые 5 секунд (данные обычно статичны)
 
         return screen
 
     def update_mb_info(self):
-        """Обновление информации о материнской плате"""
+        """Обновление информации о материнской плате с улучшенным дизайном"""
         mb_data = get_motherboard_info()
 
-        # Очищаем контейнер
+        # Очищаем контейнер перед обновлением
         while self.mb_info_layout.count():
             item = self.mb_info_layout.takeAt(0)
             widget = item.widget()
@@ -528,6 +765,7 @@ class MainWindow(QMainWindow):
         board_layout.addRow("Модель:", QLabel(mb_data.get('product', 'Неизвестно')))
         board_layout.addRow("Версия:", QLabel(mb_data.get('version', 'Неизвестно')))
         board_layout.addRow("Серийный номер:", QLabel(mb_data.get('serial', 'Неизвестно')))
+        board_layout.addRow("Чипсет:", QLabel(mb_data.get('chipset', 'Неизвестно')))
         board_group.setLayout(board_layout)
         self.mb_info_layout.addWidget(board_group)
 
@@ -537,146 +775,307 @@ class MainWindow(QMainWindow):
         bios_layout.addRow("Производитель:", QLabel(mb_data.get('bios_vendor', 'Неизвестно')))
         bios_layout.addRow("Версия:", QLabel(mb_data.get('bios_version', 'Неизвестно')))
         bios_layout.addRow("Дата:", QLabel(mb_data.get('bios_date', 'Неизвестно')))
+        bios_layout.addRow("Размер:", QLabel(mb_data.get('bios_size', 'Неизвестно')))
         bios_group.setLayout(bios_layout)
         self.mb_info_layout.addWidget(bios_group)
 
+        # Слоты расширения
+        if 'slots' in mb_data and mb_data['slots']:
+            slots_group = QGroupBox("Слоты расширения")
+            slots_layout = QFormLayout()
+            
+            for i, slot in enumerate(mb_data['slots']):
+                slot_layout = QFormLayout()
+                slot_layout.addRow("Тип:", QLabel(slot.get('type', 'N/A')))
+                slot_layout.addRow("Статус:", QLabel("Занят" if slot.get('occupied') else "Свободен"))
+                slot_layout.addRow("Описание:", QLabel(slot.get('description', 'N/A')))
+                
+                # Добавляем разделитель между слотами
+                if i > 0:
+                    separator = QFrame()
+                    separator.setFrameShape(QFrame.Shape.HLine)
+                    separator.setFrameShadow(QFrame.Shadow.Sunken)
+                    slots_layout.addRow(separator)
+                
+                slots_layout.addRow(f"Слот {i+1}:", slot_layout)
+            
+            slots_group.setLayout(slots_layout)
+            self.mb_info_layout.addWidget(slots_group)
+
+        # Датчики температуры (если доступны)
+        if 'temperatures' in mb_data and mb_data['temperatures']:
+            temp_group = QGroupBox("Температуры")
+            temp_layout = QFormLayout()
+            
+            for sensor, temp in mb_data['temperatures'].items():
+                temp_layout.addRow(
+                    f"{sensor}:", 
+                    self._create_colored_label(f"{temp}°C", 'temp')
+                )
+            
+            temp_group.setLayout(temp_layout)
+            self.mb_info_layout.addWidget(temp_group)
+
         # Добавляем растяжку в конце
         self.mb_info_layout.addStretch()
-
+        
     def Voltage_info_screen(self, title, description, image_path=None):
         screen = QWidget()
-        layout = QVBoxLayout(screen)
-        
+        main_layout = QVBoxLayout(screen)
+
+        # Изображение напряжения
         image_label = QLabel(self)
         pixmap = QPixmap("gui/img/volt.png")
         image_label.setPixmap(pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio))
-        layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignCenter)
-        
+        main_layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # Заголовок
         title_label = QLabel("<h1>Напряжение</h1>", self)
-        layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignCenter)
-        
-        self.voltage_info_label = QLabel("Загрузка данных...", self)
-        layout.addWidget(self.voltage_info_label, alignment=Qt.AlignmentFlag.AlignCenter)
-        
+        main_layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # Создаем скроллируемую область для данных
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        content = QWidget()
+        self.voltage_info_layout = QVBoxLayout(content)
+        scroll.setWidget(content)
+        main_layout.addWidget(scroll)
+
+        # Таймер для обновления данных
         self.voltage_timer = QTimer()
         self.voltage_timer.timeout.connect(self.update_voltage_info)
         self.voltage_timer.start(2000)  # Обновление каждые 2 секунды
-        
+
         return screen
-    
+
     def update_voltage_info(self):
+        """Обновление информации о напряжении с улучшенным дизайном"""
         voltage_info = get_voltage_info()
-        
+
+        # Очищаем контейнер перед обновлением
+        while self.voltage_info_layout.count():
+            item = self.voltage_info_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+
         if not voltage_info:
-            self.voltage_info_label.setText("Ошибка: Не удалось получить данные о напряжении")
+            error_label = QLabel("Ошибка: Не удалось получить данные о напряжении")
+            error_label.setStyleSheet("color: red; font-weight: bold;")
+            self.voltage_info_layout.addWidget(error_label, alignment=Qt.AlignmentFlag.AlignCenter)
             return
-        
+            
         if "error" in voltage_info:
-            self.voltage_info_label.setText(f"Ошибка: {voltage_info['error']}")
+            error_label = QLabel(f"Ошибка: {voltage_info['error']}")
+            error_label.setStyleSheet("color: red; font-weight: bold;")
+            self.voltage_info_layout.addWidget(error_label, alignment=Qt.AlignmentFlag.AlignCenter)
             return
+
+        # Группа для батареи
+        battery_group = QGroupBox("Состояние батареи")
+        battery_layout = QFormLayout()
         
-        text = "<b>Состояние батареи:</b>\n"
         battery = voltage_info.get('battery', {})
-        
         if battery:
-            text += f"Питание от сети: {battery.get('power_plugged', 'Нет данных')}\n"
-            text += f"Заряд: {battery.get('percent', 'Нет данных')}%\n"
+            battery_layout.addRow("Питание от сети:", QLabel("Да" if battery.get('power_plugged') else "Нет"))
+            battery_layout.addRow("Заряд:", self._create_colored_label(f"{battery.get('percent', 'Нет данных')}%", 'percent'))
             
             secsleft = battery.get('secsleft')
             if secsleft is not None:
                 if secsleft == -1:
-                    text += "Оставшееся время: Расчитывается...\n"
+                    battery_layout.addRow("Оставшееся время:", QLabel("Расчитывается..."))
                 elif secsleft == -2:
-                    text += "Оставшееся время: Неограничено\n"
+                    battery_layout.addRow("Оставшееся время:", QLabel("Неограничено"))
                 else:
                     mins, secs = divmod(secsleft, 60)
                     hours, mins = divmod(mins, 60)
-                    text += f"Оставшееся время: {hours:02d}:{mins:02d}:{secs:02d}\n"
+                    battery_layout.addRow("Оставшееся время:", QLabel(f"{hours:02d}:{mins:02d}:{secs:02d}"))
         else:
-            text += "Батарея не обнаружена\n"
+            battery_layout.addRow("Статус:", QLabel("Батарея не обнаружена"))
+            
+        battery_group.setLayout(battery_layout)
+        self.voltage_info_layout.addWidget(battery_group)
+
+        # Группа для напряжений
+        voltages_group = QGroupBox("Напряжения компонентов")
+        voltages_layout = QFormLayout()
         
-        text += "\n<b>Напряжения компонентов:</b>\n"
         voltages = voltage_info.get('voltages', {})
-        text += f"CPU: {voltages.get('cpu_voltage', 'Нет данных')}\n"
-        text += f"GPU: {voltages.get('gpu_voltage', 'Нет данных')}\n"
-        text += f"RAM: {voltages.get('ram_voltage', 'Нет данных')}"
+        voltages_layout.addRow("CPU:", QLabel(voltages.get('cpu_voltage', 'Нет данных')))
+        voltages_layout.addRow("GPU:", QLabel(voltages.get('gpu_voltage', 'Нет данных')))
+        voltages_layout.addRow("RAM:", QLabel(voltages.get('ram_voltage', 'Нет данных')))
+        voltages_layout.addRow("3.3V:", QLabel(voltages.get('3v3_voltage', 'Нет данных')))
+        voltages_layout.addRow("5V:", QLabel(voltages.get('5v_voltage', 'Нет данных')))
+        voltages_layout.addRow("12V:", QLabel(voltages.get('12v_voltage', 'Нет данных')))
         
-        self.voltage_info_label.setText(text)
+        voltages_group.setLayout(voltages_layout)
+        self.voltage_info_layout.addWidget(voltages_group)
+
+        # Добавляем растяжку в конце
+        self.voltage_info_layout.addStretch()
         
     def RAM_info_screen(self, title, description, image_path=None):
         screen = QWidget()
-        layout = QVBoxLayout(screen)
-        
+        main_layout = QVBoxLayout(screen)
+
+        # Изображение оперативной памяти
         image_label = QLabel(self)
         pixmap = QPixmap("gui/img/ram.png")
         image_label.setPixmap(pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio))
-        layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignCenter)
-        
-        title_text = QLabel("<h1>Оперативная память</h1>", self)
-        layout.addWidget(title_text, alignment=Qt.AlignmentFlag.AlignCenter)
-        
-        self.ram_info_label = QLabel("Загрузка: --%", self)
-        layout.addWidget(self.ram_info_label, alignment=Qt.AlignmentFlag.AlignCenter)
-        
+        main_layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # Заголовок
+        title_label = QLabel("<h1>Оперативная память</h1>", self)
+        main_layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # Создаем скроллируемую область для данных
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        content = QWidget()
+        self.ram_info_layout = QVBoxLayout(content)
+        scroll.setWidget(content)
+        main_layout.addWidget(scroll)
+
+        # Таймер для обновления данных
         self.ram_timer = QTimer()
         self.ram_timer.timeout.connect(self.update_ram_info)
         self.ram_timer.start(500)
-        
+
         return screen
-    
+
     def update_ram_info(self):
+        """Обновление информации об оперативной памяти с улучшенным дизайном"""
         ram_info = monitor_ram()
-        
+
+        # Очищаем контейнер перед обновлением
+        while self.ram_info_layout.count():
+            item = self.ram_info_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+
         if not ram_info:
-            self.ram_info_label.setText("Ошибка: Не удалось получить данные о RAM")
+            error_label = QLabel("Ошибка: Не удалось получить данные о RAM")
+            error_label.setStyleSheet("color: red; font-weight: bold;")
+            self.ram_info_layout.addWidget(error_label, alignment=Qt.AlignmentFlag.AlignCenter)
             return
-        else:
-            ram_text = (
-                f"Общий объем памяти: {ram_info['ram']} ГБ\n"
-                f"Свободное место: {ram_info['free']} ГБ\n"
-                f"Используется сейчас: {ram_info['usage']} ГБ\n"
-                f"Занято: {ram_info['percent']} %"
-            )
+
+        # Основные параметры
+        main_group = QGroupBox("Основные параметры")
+        main_layout = QFormLayout()
+        main_layout.addRow("Общий объем:", QLabel(f"{ram_info['ram']} ГБ"))
+        main_layout.addRow("Свободно:", QLabel(f"{ram_info['free']} ГБ"))
+        main_layout.addRow("Используется:", QLabel(f"{ram_info['usage']} ГБ"))
+        main_layout.addRow("Занято:", self._create_colored_label(f"{ram_info['percent']}%", 'percent'))
+        main_group.setLayout(main_layout)
+        self.ram_info_layout.addWidget(main_group)
+
+        # Детализация по слотам, если есть
+        if 'slots' in ram_info and ram_info['slots']:
+            slots_group = QGroupBox("Слоты памяти")
+            slots_layout = QFormLayout()
             
-        self.ram_info_label.setText(ram_text)
+            for i, slot in enumerate(ram_info['slots']):
+                slot_layout = QFormLayout()
+                slot_layout.addRow("Размер:", QLabel(f"{slot.get('size', 'N/A')} ГБ"))
+                slot_layout.addRow("Тип:", QLabel(slot.get('type', 'N/A')))
+                slot_layout.addRow("Скорость:", QLabel(f"{slot.get('speed', 'N/A')} МГц"))
+                slot_layout.addRow("Производитель:", QLabel(slot.get('manufacturer', 'N/A')))
+                slot_layout.addRow("Серийный номер:", QLabel(slot.get('serial', 'N/A')))
+                
+                # Добавляем разделитель между слотами
+                if i > 0:
+                    separator = QFrame()
+                    separator.setFrameShape(QFrame.Shape.HLine)
+                    separator.setFrameShadow(QFrame.Shadow.Sunken)
+                    slots_layout.addRow(separator)
+                
+                slots_layout.addRow(f"Слот {i+1}:", slot_layout)
+            
+            slots_group.setLayout(slots_layout)
+            self.ram_info_layout.addWidget(slots_group)
+
+        # Добавляем растяжку в конце
+        self.ram_info_layout.addStretch()
         
     def HDD_info_screen(self, title, description, image_path=None):
         screen = QWidget()
-        layout = QVBoxLayout(screen)
-        
+        main_layout = QVBoxLayout(screen)
+
+        # Изображение диска
         image_label = QLabel(self)
         pixmap = QPixmap("gui/img/disk.png")
         image_label.setPixmap(pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio))
-        layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignCenter)
-        
-        title_lable = QLabel("<h1>Диск</h1>", self)
-        layout.addWidget(title_lable, alignment=Qt.AlignmentFlag.AlignCenter)
-        
-        self.hdd_info_label = QLabel("Загрузка: --%", self)
-        layout.addWidget(self.hdd_info_label, alignment=Qt.AlignmentFlag.AlignCenter)
-        
-        self.hdd_time = QTimer()
-        self.hdd_time.timeout.connect(self.update_hdd_info)
-        self.hdd_time.start(500)
-        
+        main_layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # Заголовок
+        title_label = QLabel("<h1>Диск</h1>", self)
+        main_layout.addWidget(title_label, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # Создаем скроллируемую область для данных
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        content = QWidget()
+        self.hdd_info_layout = QVBoxLayout(content)
+        scroll.setWidget(content)
+        main_layout.addWidget(scroll)
+
+        # Таймер для обновления данных
+        self.hdd_timer = QTimer()
+        self.hdd_timer.timeout.connect(self.update_hdd_info)
+        self.hdd_timer.start(500)
+
         return screen
-    
+
     def update_hdd_info(self):
-        hdd_info = monitor_hdd()
-        
+        """Обновление информации о дисках с улучшенным дизайном"""
+        hdd_info = monitor_hdd()  # Изменено название переменной (не список)
+
+        # Очищаем контейнер перед обновлением
+        while self.hdd_info_layout.count():
+            item = self.hdd_info_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+
+        # Обрабатываем случай с ошибкой получения данных
         if not hdd_info:
-            self.hdd_info_label.setText("Ошибка: Не удалось получить данные о диске(HDD)")
+            error_label = QLabel("Ошибка: Не удалось получить данные о дисках")
+            error_label.setStyleSheet("color: red; font-weight: bold;")
+            self.hdd_info_layout.addWidget(error_label, alignment=Qt.AlignmentFlag.AlignCenter)
+            return
+
+        # Основная группа для диска
+        disk_group = QGroupBox(f"Диск: {hdd_info.get('device', 'Неизвестно')}")
+        disk_layout = QFormLayout()
+        
+        # Основные параметры
+        disk_layout.addRow("Точка подключения:", QLabel(hdd_info['mountpoint']))
+        disk_layout.addRow("Тип файловой системы:", QLabel(hdd_info['file_sys']))
+        disk_layout.addRow("Общий объем:", QLabel(f"{hdd_info['size']} ГБ"))
+        disk_layout.addRow("Использовано:", QLabel(f"{hdd_info['used']} ГБ"))
+        disk_layout.addRow("Свободно:", QLabel(f"{hdd_info['free']} ГБ"))
+        disk_layout.addRow("Процент использования:", self._create_colored_label(f"{hdd_info['percent']}%", 'percent'))
+        
+        # SMART информация, если доступна
+        if 'smart' in hdd_info and hdd_info['smart']:
+            smart_group = QGroupBox("SMART статус")
+            smart_layout = QFormLayout()
             
-        else:
-            hdd_text = (
-                f"Процентр использования: {hdd_info['percent']}%\n"
-                f"Точка подключения: {hdd_info['device']}\n"
-                f"Тип системы: {hdd_info['file_sys']}\n"
-                f"Объем диска: {hdd_info['size']} \n"
-                f"Использовано памяти: {hdd_info['used']}\n"
-                f"Свободно памяти: {hdd_info['free']}\n")
+            smart_layout.addRow("Статус:", QLabel(hdd_info['smart']['status']))
+            smart_layout.addRow("Температура:", self._create_colored_label(
+                f"{hdd_info['smart'].get('temperature', 'N/A')}°C", 'temp'))
+            smart_layout.addRow("Время работы:", QLabel(f"{hdd_info['smart'].get('power_on_hours', 'N/A')} часов"))
+            smart_layout.addRow("Ошибки чтения:", QLabel(str(hdd_info['smart'].get('read_errors', 'N/A'))))
             
-        self.hdd_info_label.setText(hdd_text)
+            smart_group.setLayout(smart_layout)
+            disk_layout.addRow(smart_group)
+        
+        disk_group.setLayout(disk_layout)
+        self.hdd_info_layout.addWidget(disk_group)
+
+        # Добавляем растяжку в конце
+        self.hdd_info_layout.addStretch()
         
     def create_diagnostic_screen(self, title, description, image_path=None):
         """Создаем экран диагностики с улучшенным дизайном"""
@@ -976,7 +1375,7 @@ class MainWindow(QMainWindow):
         self.test_time = 0
         self.test_timer = QTimer()
         self.test_timer.timeout.connect(
-            lambda: self.update_progress(test_type))
+            lambda: self.update_progress(test_type=test_type))
         self.test_timer.start(1000)
 
     def update_progress(self, *args, test_type=None):
@@ -1318,5 +1717,3 @@ class MainWindow(QMainWindow):
         about_text = "Это приложение для диагностики системы.\nРазработано для дипломного проекта."
         self.general_info_screen.layout().itemAt(1).widget().setText(about_text)
         self.stacked_widget.setCurrentWidget(self.general_info_screen)
-
-
